@@ -1,7 +1,10 @@
-/* WEB APP TESTER v1.3.52 TEST: offline shell and local imported-app files. */
-const CACHE='web-app-tester-1.3.52';
+/* WEB APP TESTER v1.3.53 TEST: offline shell and local imported-app files. */
+const CACHE='web-app-tester-1.3.53';
 const SHELL=['./','./index.html','./jszip.min.js','./bot.js','./app.js','./updates-core.js','./updates-ui.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL))));
 self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
 function workspace(){return new Promise((resolve,reject)=>{const request=indexedDB.open('mc2-testing-studio',1);request.onupgradeneeded=()=>request.result.createObjectStore('state');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,read=db.transaction('state').objectStore('state').get('workspace');read.onsuccess=()=>{db.close();resolve(read.result)};read.onerror=()=>{db.close();reject(read.error)}}})}
 self.addEventListener('fetch',event=>{const url=new URL(event.request.url),root=new URL(self.registration.scope);if(event.request.method!=='GET'||url.origin!==root.origin)return;const relative=url.pathname.slice(root.pathname.length);if(relative.startsWith('__apps/')){event.respondWith((async()=>{try{const parts=relative.split('/').map(decodeURIComponent),id=parts[1],path=parts.slice(2).join('/');const state=await workspace();const file=state?.apps?.[id]?.files?.find(file=>file.path===path);return file?new Response(file.blob,{headers:{'Content-Type':file.blob.type||'application/octet-stream','Cache-Control':'no-store'}}):new Response('Imported app file not found',{status:404})}catch(error){return new Response('Imported app unavailable',{status:500})}})());return;}if(relative==='updates.json')return;if(SHELL.some(path=>new URL(path,root).pathname===url.pathname)){event.respondWith(fetch(event.request).then(response=>{if(response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy))}return response}).catch(()=>caches.match(event.request)));}});
+
+// Explicit user-approved activation only.
+self.addEventListener('message',event=>{if(event.data?.type==='WAT_ACTIVATE_WAITING_UPDATE')self.skipWaiting();});

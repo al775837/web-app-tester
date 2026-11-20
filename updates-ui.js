@@ -1,5 +1,5 @@
 /* Update checks never install files, reload the application, or reset user data. */
-const UPDATE_BUILD='1.3.52';
+const UPDATE_BUILD='1.3.53';
 const BUNDLED_UPDATE_CATALOG={schema:1,appId:'web-app-tester',releases:[
  {version:'1.3.28',title:'New Updates',designChanges:['Design changes in this release.'],operationalImprovements:['Operational improvements in this release.']},
  {version:'1.3.32',title:'Check for Updates',designChanges:['Update information is available from the existing version and Settings dialogs.'],operationalImprovements:['Added version comparison, release history, and an optional HTTPS update source.','Update checks preserve current projects, test results, and application data.']}
