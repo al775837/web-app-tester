@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "appId": "web-app-tester",
+  "releases": [
+    {
+      "version": "1.3.38",
+      "title": "New Updates",
+      "designChanges": [
+        "Design changes in this release."
+      ],
+      "operationalImprovements": [
+        "Operational improvements in this release."
+      ],
+      "notes": "Fix missing device pictures in standalone HTML and PWA by embedding approved artwork."
+    },
+    {
+      "version": "1.3.28",
+      "title": "New Updates",
+      "designChanges": [
+        "Design changes in this release."
+      ],
+      "operationalImprovements": [
+        "Operational improvements in this release."
+      ]
+    },
+    {
+      "version": "1.3.32",
+      "title": "Check for Updates",
+      "designChanges": [
+        "Update information is available from the existing version and Settings dialogs."
+      ],
+      "operationalImprovements": [
+        "Added version comparison, release history, and an optional HTTPS update source."
+      ]
+    },
+    {
+      "version": "1.3.33",
+      "title": "Cloud settings preferences",
+      "designChanges": [],
+      "operationalImprovements": [
+        "Added three independent OFF-by-default cloud preferences. No cloud service is connected."
+      ]
+    },
+    {
+      "version": "1.3.34",
+      "title": "Local and hosted application mode",
+      "designChanges": [],
+      "operationalImprovements": [
+        "Persistent Local/Hosted mode preference and hosted URL launcher in existing Settings.",
+        "Existing Check for Updates and all local data retained."
+      ]
+    },
+    {
+      "version": "1.3.37",
+      "title": "Settings device pictures and popular device presets",
+      "designChanges": [
+        "Settings device selector uses the user-provided device pictures."
+      ],
+      "operationalImprovements": [
+        "Popular tablet and phone presets populate CSS viewport width and height; existing custom, reset, and save remain."
+      ]
+    }
+  ]
+}
