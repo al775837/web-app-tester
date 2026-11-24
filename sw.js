@@ -1,5 +1,5 @@
-/* WEB APP TESTER v1.3.53 TEST: offline shell and local imported-app files. */
-const CACHE='web-app-tester-1.3.53';
+/* WEB APP TESTER v1.3.55 TEST: offline shell and local imported-app files. */
+const CACHE='web-app-tester-1.3.55';
 const SHELL=['./','./index.html','./jszip.min.js','./bot.js','./app.js','./updates-core.js','./updates-ui.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL))));
 self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));

@@ -1,5 +1,5 @@
 'use strict';
-const VERSION='1.3.53 TEST';
+const VERSION='1.3.55 TEST';
 
 const $=selector=>document.querySelector(selector);
 const $$=selector=>[...document.querySelectorAll(selector)];
@@ -37,7 +37,8 @@ const guideSteps=[
  ['Inspect different resolutions','Use Settings to select each device’s viewport size.','[data-action="settings"]','Resolutions'],
  ['Capture evidence','Capture the workspace or attach an image to your test.','[data-menu="evidence"]','Evidence'],
  ['Review results and notes','Record observations and review your manual test results.','.right','Results & Notes'],
- ['Save the testing session','Save this project and download a backup for recovery.','[data-menu="sessions"]','Session Backup']
+ ['Save the testing session','Save this project and download a backup for recovery.','[data-menu="sessions"]','Session Backup'],
+ ['Check live animations','Observe CSS, JavaScript, SVG, canvas and GIF animations on each intended device. Change zoom, full screen and view; confirm visible animations resume without reloading. Use SKIP for unsupported devices or absent effects.','#previewArea','Live Animation Compatibility']
 ];
 const defaultTests=()=>[];
 const defaultSettings=()=>({view:'all',zoom:100,sync:false,guide:false,minimized:false,panelCollapsed:false,deviceZoom:{desktop:100,tablet:100,phone:100},rotations:{desktop:false,tablet:false,phone:false},step:0,resolutions:{desktop:{width:1440,height:900},tablet:{width:768,height:1024},phone:{width:390,height:844}},cloudDatabaseEnabled:false,userAccountsEnabled:false,cloudSyncEnabled:false,applicationMode:"local",hostedAppURL:""});
@@ -184,6 +185,29 @@ async function importFile(file,target){
  if(entries.length>1)showDialog('Choose application entry point','<p>Detected '+entries.length+' HTML pages. The preferred entry is selected.</p><label>Entry page<select id="entryChoice">'+entries.map(path=>'<option '+(path===app.entry?'selected':'')+'>'+escapeHTML(path)+'</option>').join('')+'</select></label><div class="dialogActions">'+actionButton('confirmEntry','Open selected page',true)+'</div><input type="hidden" id="entryAppId" value="'+app.id+'">');
 }
 function appForDevice(name){return state.apps[compare&&name==='phone'&&state.versionB?state.versionB:state.currentApp];}
+let expandedDevice=null;
+function setPreviewFullscreen(name){
+ const current=expandedDevice;
+ if(current){
+  const previous=document.querySelector('[data-device="'+current+'"]');
+  previous?.classList.remove('previewFullscreen');
+  document.body.classList.remove('previewFullscreenActive');
+  const previousButton=previous?.querySelector('[data-device-command="fullscreen"]');
+  if(previousButton){previousButton.title='Full Screen';previousButton.setAttribute('aria-label','Full Screen '+current);previousButton.setAttribute('aria-pressed','false');}
+  expandedDevice=null;
+ }
+ if(name&&name!==current){
+  if(document.querySelector('[data-device="'+name+'"]')?.hidden)switchView(name);
+  const device=document.querySelector('[data-device="'+name+'"]');
+  if(!device)return;
+  expandedDevice=name;device.classList.add('previewFullscreen');
+  document.body.classList.add('previewFullscreenActive');
+  const button=device.querySelector('[data-device-command="fullscreen"]');
+  if(button){button.title='Exit Full Screen';button.setAttribute('aria-label','Exit Full Screen '+name);button.setAttribute('aria-pressed','true');}
+ }
+ requestAnimationFrame(fitFrames);
+}
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&expandedDevice){event.preventDefault();setPreviewFullscreen(null);}});
 function fitFrames(){
  const area=$('#previewArea'),stageHeight=Math.max(380,$('.left').clientHeight-$('.panelHead').offsetHeight-2);
  area.style.setProperty('--preview-stage-height',stageHeight+'px');
@@ -206,16 +230,19 @@ function fitFrames(){
  }
  for(const [name,frame] of bridgeFrames){
   const glass=frame.closest('.glass');const resolution=state.settings.resolutions[name];
-  const baseScale=glass.clientWidth/resolution.width;
+  frame.style.width=resolution.width+'px';frame.style.height=resolution.height+'px';
+  if(glass.clientWidth===0||glass.clientHeight===0)continue;
+  const baseScale=expandedDevice===name?Math.min(glass.clientWidth/resolution.width,glass.clientHeight/resolution.height):glass.clientWidth/resolution.width;
   const scale=baseScale*state.settings.zoom/100*(state.settings.deviceZoom?.[name]||100)/100;
   const canvas=frame.parentElement;
   canvas.style.width=Math.round(resolution.width*scale)+'px';canvas.style.height=Math.round(resolution.height*scale)+'px';
   frame.style.width=resolution.width+'px';frame.style.height=resolution.height+'px';
   frame.style.transform='scale('+scale+')';
-  canvas.style.marginLeft=Math.max(0,(glass.clientWidth-resolution.width*scale)/2)+'px';frame.style.left='0px';frame.style.top='0px';
+  canvas.style.marginLeft=Math.max(0,(glass.clientWidth-resolution.width*scale)/2)+'px';canvas.style.marginTop=expandedDevice===name?Math.max(0,(glass.clientHeight-resolution.height*scale)/2)+'px':'0px';frame.style.left='0px';frame.style.top='0px';
  }
 }
 function renderPreviews(){
+ if(expandedDevice)setPreviewFullscreen(null);
  previewEpoch++;bridgeFrames.clear();
  const view=state.settings.view;
  $('#previewArea').classList.toggle('single',view!=='all');
@@ -224,7 +251,7 @@ function renderPreviews(){
  $('#zoom').value=state.settings.zoom+'%';$('#sync').checked=state.settings.sync;
  $('#appName').textContent=state.apps[state.currentApp]?.name||'';
  for(const name of ['desktop','tablet','phone']){
- const glass=$('#'+name+'Glass');glass.replaceChildren();if(view!=='all'&&view!==name)continue;
+ const glass=$('#'+name+'Glass');glass.replaceChildren();
  const app=appForDevice(name);if(!app)continue;
  const iframe=document.createElement('iframe');iframe.title=name+' application preview';
  const viewport=state.settings.resolutions[name];iframe.style.width=viewport.width+'px';iframe.style.height=viewport.height+'px';
@@ -303,7 +330,7 @@ function attachPreviewScrollSync(device,frame){
     });
   },{capture:true,passive:true});
 }
-function switchView(view){state.settings.view=view;renderPreviews();scheduleSave();}
+function switchView(view){if(expandedDevice)setPreviewFullscreen(null);state.settings.view=view;$('#previewArea').classList.toggle('single',view!=='all');$$('[data-device]').forEach(el=>el.hidden=view!=='all'&&el.dataset.device!==view);$$('[data-view]').forEach(el=>el.classList.toggle('primary',el.dataset.view===view));requestAnimationFrame(fitFrames);scheduleSave();}
 // Run Tests progress is confined to the automated test workflow.
 let automaticRunActive=false;
 function showAutomaticProgress(){
@@ -726,10 +753,11 @@ document.addEventListener('change',event=>{
 function handleDeviceCommand(action,name){
  const label=name==='phone'?'Mobile':name[0].toUpperCase()+name.slice(1);
  const r=state.settings.resolutions[name];
+ if(action==='fullscreen'){setPreviewFullscreen(name);return;}
  if(action==='focus'){switchView(state.settings.view===name?'all':name);return;}
  if(action==='rotate'){state.settings.rotations={...state.settings.rotations,[name]:!state.settings.rotations?.[name]};state.settings.resolutions[name]={width:r.height,height:r.width};fitFrames();persist();}
  if(action==='plus'||action==='minus'){const value=state.settings.deviceZoom?.[name]||100;state.settings.deviceZoom={...state.settings.deviceZoom,[name]:Math.min(200,Math.max(50,value+(action==='plus'?5:-5)))};fitFrames();persist();}
- if(action==='reload'){const frame=bridgeFrames.get(name);if(frame){frame.src=frame.src;notify(label+' reloaded.');}else notify('Load an application first.');}
+ if(action==='reload'){const frame=bridgeFrames.get(name);if(frame){if(frame.hasAttribute('srcdoc'))frame.srcdoc=frame.srcdoc;else frame.src=frame.src;notify(label+' reloaded.');}else notify('Load an application first.');}
  if(action==='resolution'){showDialog(label+' resolution','<form id="deviceResolutionForm"><input name="device" type="hidden" value="'+name+'">'+resolutionPresetMarkup(r.width,r.height)+'<label>Width<input data-resolution-width name="width" type="number" min="240" max="7680" required value="'+r.width+'"></label><label>Height<input data-resolution-height name="height" type="number" min="240" max="7680" required value="'+r.height+'"></label><div class="dialogActions"><button type="button" data-reset-device="'+name+'">Reset to default</button><button class="primary" type="submit">Apply resolution</button></div></form>');bindResolutionFields(document.getElementById('deviceResolutionForm'));}
 }
 document.addEventListener('click',event=>{const reset=event.target.closest('[data-reset-device]');if(!reset)return;const defaults=DEFAULT_DEVICE_RESOLUTIONS[reset.dataset.resetDevice];const group=reset.closest('[data-resolution-group]')||reset.closest('#deviceResolutionForm');if(!defaults||!group)return;group.querySelector('[data-resolution-width]').value=defaults.width;group.querySelector('[data-resolution-height]').value=defaults.height;const preset=group.querySelector('[data-resolution-preset]');if(preset)preset.value=RESOLUTION_PRESETS.some(([v])=>v===defaults.width+'x'+defaults.height)?defaults.width+'x'+defaults.height:'custom';const badge=group.querySelector('[data-selected-resolution]');if(badge)badge.textContent=defaults.width+' × '+defaults.height;group.querySelectorAll('input[type=radio]').forEach(r=>r.checked=r.value===defaults.width+'x'+defaults.height);});

@@ -59,6 +59,16 @@
       "operationalImprovements": [
         "Popular tablet and phone presets populate CSS viewport width and height; existing custom, reset, and save remain."
       ]
+    },
+    {
+      "version": "1.3.55",
+      "title": "Live animation continuity",
+      "designChanges": [],
+      "operationalImprovements": [
+        "Keep live device frames mounted during view changes.",
+        "Add manual animation compatibility guide step.",
+        "Correct explicit reload of srcdoc previews."
+      ]
     }
   ]
 }
